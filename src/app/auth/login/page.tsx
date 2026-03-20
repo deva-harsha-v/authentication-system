@@ -18,7 +18,7 @@ export default function Login() {
   const [mode, setMode] = useState("password");
   const [tempUser, setTempUser] = useState<any>(null);
 
-  // ✅ FIXED: No reload loop, controlled redirect
+  // ✅ Controlled redirect AFTER successful login
   useEffect(() => {
     if (status !== "authenticated") return;
 
@@ -35,7 +35,7 @@ export default function Login() {
       localStorage.setItem("provider", "google");
     }
 
-    router.replace("/"); // ✅ no full reload
+    router.replace("/dashboard"); // 🔁 single source of redirect
   }, [status, session, router]);
 
   const generateOTP = (phone: string) => {
@@ -82,7 +82,7 @@ export default function Login() {
       localStorage.setItem("provider", "local");
       document.cookie = "currentUser=true; path=/";
 
-      router.replace("/"); // ✅ FIXED (no reload)
+      router.replace("/"); // ✅ consistent redirect
     } else {
       alert("Invalid OTP ❌");
     }
@@ -111,9 +111,9 @@ export default function Login() {
         </span>
       </div>
 
-      {/* ✅ FIXED: controlled redirect */}
+      {/* ✅ FIXED: removed callbackUrl to avoid double redirect */}
       <button
-        onClick={() => signIn("google", { callbackUrl: "/" })}
+        onClick={() => signIn("google")}
         disabled={status === "loading"}
         className="w-full flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-bold text-slate-700 text-sm"
       >
@@ -200,23 +200,15 @@ export default function Login() {
 
         {step === "otpVerification" && (
           <>
-            <div className="text-center mb-2">
-              <p className="text-xs text-slate-500">
-                Code sent to:{" "}
-                <span className="font-bold text-slate-900">
-                  {tempUser?.phone}
-                </span>
-              </p>
-            </div>
             <input
               maxLength={6}
               placeholder="••••••"
               onChange={(e) => setEnteredOtp(e.target.value)}
-              className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-center text-2xl tracking-[0.5em] font-bold outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full p-3 rounded-xl text-center text-2xl tracking-[0.5em] font-bold"
             />
             <button
               onClick={verifyOtp}
-              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100"
+              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold"
             >
               Verify & Enter Dashboard
             </button>
@@ -224,21 +216,14 @@ export default function Login() {
         )}
       </div>
 
-      <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+      <div className="mt-8 pt-6 border-t text-center">
         <p className="text-sm text-slate-500 font-medium">
           Don't have an account?{" "}
-          <Link
-            href="/auth/signup"
-            className="text-blue-600 font-bold hover:underline"
-          >
+          <Link href="/auth/signup" className="text-blue-600 font-bold">
             Sign Up
           </Link>
         </p>
       </div>
-
-      <p className="mt-4 text-[9px] text-center text-slate-400 font-bold uppercase tracking-widest opacity-60">
-        Powered by Authentik IAM • Balancing Security & Usability
-      </p>
     </div>
   );
 }
