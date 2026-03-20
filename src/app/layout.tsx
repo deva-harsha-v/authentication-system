@@ -1,26 +1,29 @@
-"use client"
+"use client";
 
-import "./globals.css"
-import { SessionProvider } from "next-auth/react"
-import { Inter } from "next/font/google"
+import "./globals.css";
+import { SessionProvider } from "next-auth/react";
+import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full">
-      <body className={`${inter.className} h-full antialiased`}>
+    <html lang="en">
+      <body className={`${inter.className} bg-slate-900 min-h-screen antialiased`}>
         <SessionProvider>
-          {/* Main wrapper to center the auth cards globally */}
-          <main className="flex min-h-screen items-center justify-center p-4">
+          {/* We use 'flex justify-center' here. 
+              'py-10' (padding vertical) ensures that if the dashboard is tall, 
+              it doesn't touch the very top or bottom of the screen.
+          */}
+          <main className="flex min-h-screen w-full justify-center items-center py-10 px-4">
             {children}
           </main>
         </SessionProvider>
       </body>
     </html>
-  )
+  );
 }
