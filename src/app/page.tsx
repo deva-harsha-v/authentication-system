@@ -39,7 +39,7 @@ export default function Home() {
 
   // ✅ Client-side navigation to the settings dashboard
   const goToSettings = () => {
-    router.push("/auth/settings");
+    router.push("/settings");
   };
 
   const handleLogout = async () => {
