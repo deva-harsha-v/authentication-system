@@ -35,7 +35,7 @@ export default function Login() {
       localStorage.setItem("provider", "google");
     }
 
-    router.replace("/dashboard"); // 🔁 single source of redirect
+    router.replace("/"); // 🔁 single source of redirect
   }, [status, session, router]);
 
   const generateOTP = (phone: string) => {
