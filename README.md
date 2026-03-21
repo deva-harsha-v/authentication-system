@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛡️ Next.js Advanced Authentication System
 
-## Getting Started
+A robust, full-stack authentication platform built with **Next.js 15 (App Router)**. This project demonstrates a hybrid identity model, combining industry-standard OAuth 2.0 via Google with a custom localized Multi-Factor Authentication (MFA) flow.
 
-First, run the development server:
+🚀 **Live Demo:** [View Deployment](https://authentication-system-xhaw.vercel.app/)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Key Features
+* **Dual-Channel Authentication:** Support for Google SSO and Local Email/Password login.
+* **Multi-Factor Authentication (MFA):** Integrated 6-digit OTP verification for local logins.
+* **Open-Source IAS Integration:** Architecture designed for seamless integration with Identity & Access Management tools like **Authentik**.
+* **Route Guarding:** Advanced Middleware implementation protecting `/dashboard` and `/auth/settings`.
+* **Responsive UI:** Modern "Glassmorphism" design using Tailwind CSS with dedicated Step-by-Step UX feedback.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Technical Stack
+- **Framework:** Next.js 15+ (React 19)
+- **Auth:** NextAuth.js (v4) & JWT Strategy
+- **Styling:** Tailwind CSS
+- **State Management:** React Hooks (Context API / LocalStorage)
+- **Security:** Middleware-level session validation & CSRF protection
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🏗️ Architecture Overview
+The system uses a **Smart Routing** architecture:
+1.  **Gatekeeper (`middleware.ts`)**: Validates sessions across two channels (NextAuth Token or Local Session Cookie).
+2.  **The Controller (`/`)**: A logic-only root that directs traffic based on real-time authentication state.
+3.  **Identity Dashboard (`/dashboard`)**: A centralized hub for user session auditing and role verification.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## ⚙️ Local Setup
+1. Clone the repo: `git clone https://github.com/deva-harsha-v/authentication-system`
+2. Install dependencies: `npm install`
+3. Configure `.env.local`:
+   ```env
+   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_SECRET=your_secret
+   GOOGLE_CLIENT_ID=your_id
+   GOOGLE_CLIENT_SECRET=your_secret
