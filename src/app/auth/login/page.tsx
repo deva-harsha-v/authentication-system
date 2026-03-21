@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function Login() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -17,26 +17,6 @@ export default function Login() {
   const [step, setStep] = useState("login");
   const [mode, setMode] = useState("password");
   const [tempUser, setTempUser] = useState<any>(null);
-
-  // ✅ Controlled redirect AFTER successful login
-  useEffect(() => {
-    if (status !== "authenticated") return;
-
-    const alreadyLogged = localStorage.getItem("provider");
-
-    if (!alreadyLogged) {
-      localStorage.setItem(
-        "currentUser",
-        JSON.stringify({
-          email: session?.user?.email,
-          name: session?.user?.name,
-        })
-      );
-      localStorage.setItem("provider", "google");
-    }
-
-    router.replace("/"); // 🔁 single source of redirect
-  }, [status, session, router]);
 
   const generateOTP = (phone: string) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -77,45 +57,53 @@ export default function Login() {
   };
 
   const verifyOtp = () => {
-    if (otpStore[tempUser?.phone] === enteredOtp) {
+    if (!tempUser) {
+      alert("Session expired ❌. Please log in again.");
+      setStep("login");
+      return;
+    }
+
+    const cleanOtp = enteredOtp.replace(/\s/g, "");
+    
+    if (otpStore[tempUser.phone] === cleanOtp) {
+      // 1. Storage
       localStorage.setItem("currentUser", JSON.stringify(tempUser));
       localStorage.setItem("provider", "local");
-      document.cookie = "currentUser=true; path=/";
+      
+      // 2. Set Cookie (Ensure it's exactly what Middleware looks for)
+      // We set 'currentUser=true' so the middleware isAuthenticated check works
+      document.cookie = "currentUser=true; path=/; max-age=86400; SameSite=Lax";
 
-      router.replace("/"); // ✅ consistent redirect
+      // 3. Use window.location for a fresh page load to trigger middleware
+      window.location.href = "/dashboard"; 
     } else {
-      alert("Invalid OTP ❌");
+      alert("Invalid OTP ❌. Use the 6-digit code sent to your alert box.");
     }
   };
 
   return (
-    <div className="glass-card w-full max-w-md p-8 rounded-3xl shadow-2xl auth-transition border border-white/20">
-      <h2 className="text-2xl font-black text-center text-slate-900 mb-1 tracking-tight">
+    <div className="glass-card w-full max-w-md p-8 rounded-3xl shadow-2xl border border-white/20">
+      <h2 className="text-2xl font-black text-center text-slate-900 mb-1">
         Welcome Back
       </h2>
-      <p className="text-sm text-center text-slate-500 mb-6 font-medium">
+
+      <p className="text-sm text-center text-slate-500 mb-6">
         Choose your preferred login method
       </p>
 
       <div className="flex justify-center mb-6">
-        <span
-          className={`px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-            step === "login"
-              ? "bg-blue-50 text-blue-600"
-              : "bg-green-50 text-green-600"
-          }`}
-        >
+        <span className="px-4 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600">
           {step === "login"
             ? "Step 1: Credentials"
             : "Step 2: OTP Verification"}
         </span>
       </div>
 
-      {/* ✅ FIXED: removed callbackUrl to avoid double redirect */}
+      {/* Google Login */}
       <button
-        onClick={() => signIn("google")}
+        onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
         disabled={status === "loading"}
-        className="w-full flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-bold text-slate-700 text-sm"
+        className="w-full flex items-center justify-center gap-3 py-3 border rounded-xl font-bold text-sm"
       >
         <img
           src="https://www.svgrepo.com/show/355037/google.svg"
@@ -125,20 +113,15 @@ export default function Login() {
         {status === "loading" ? "Connecting..." : "Continue with Google"}
       </button>
 
-      <div className="relative my-8 text-center">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-slate-100"></span>
-        </div>
-        <span className="relative bg-white px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-          Or Secure Local Login
-        </span>
+      <div className="my-6 text-center text-xs text-gray-400">
+        OR Secure Local Login
       </div>
 
       {step === "login" && (
         <div className="bg-slate-100/50 p-1.5 rounded-xl flex mb-6">
           <button
             onClick={() => setMode("password")}
-            className={`flex-1 py-2 text-xs rounded-lg transition-all font-bold ${
+            className={`flex-1 py-2 text-xs rounded-lg font-bold ${
               mode === "password"
                 ? "bg-white text-blue-600 shadow-sm"
                 : "text-slate-500"
@@ -146,9 +129,10 @@ export default function Login() {
           >
             Password + OTP
           </button>
+
           <button
             onClick={() => setMode("otpLogin")}
-            className={`flex-1 py-2 text-xs rounded-lg transition-all font-bold ${
+            className={`flex-1 py-2 text-xs rounded-lg font-bold ${
               mode === "otpLogin"
                 ? "bg-white text-blue-600 shadow-sm"
                 : "text-slate-500"
@@ -165,19 +149,19 @@ export default function Login() {
             <input
               placeholder="Email or Phone"
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 rounded-xl border"
             />
             <input
               type="password"
               placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 rounded-xl border"
             />
             <button
               onClick={handlePasswordLogin}
-              className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+              className="w-full py-3 bg-blue-600 text-white rounded-xl"
             >
-              Login (MFA Required)
+              Login
             </button>
           </>
         )}
@@ -187,13 +171,13 @@ export default function Login() {
             <input
               placeholder="Phone Number"
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 rounded-xl border"
             />
             <button
               onClick={handleOtpLogin}
-              className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+              className="w-full py-3 bg-blue-600 text-white rounded-xl"
             >
-              Send Verification Code
+              Send OTP
             </button>
           </>
         )}
@@ -203,12 +187,14 @@ export default function Login() {
             <input
               maxLength={6}
               placeholder="••••••"
-              onChange={(e) => setEnteredOtp(e.target.value)}
-              className="w-full p-3 rounded-xl text-center text-2xl tracking-[0.5em] font-bold"
+              onChange={(e) =>
+                setEnteredOtp(e.target.value.replace(/\s/g, ""))
+              }
+              className="w-full p-3 text-center text-2xl tracking-[0.5em] rounded-xl border"
             />
             <button
               onClick={verifyOtp}
-              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold"
+              className="w-full bg-green-600 text-white py-3 rounded-xl"
             >
               Verify & Enter Dashboard
             </button>
@@ -224,6 +210,7 @@ export default function Login() {
           </Link>
         </p>
       </div>
+
     </div>
   );
 }

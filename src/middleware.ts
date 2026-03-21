@@ -1,38 +1,44 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname
-  
-  // 1. Define Public vs. Protected paths
-  const isPublicPath = path === '/auth/login' || path === '/auth/signup'
-  // Match the exact folder structure you are using
-  const isProtectedPath = path === '/' || path.startsWith('/auth/settings')
+export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
 
-  // 2. Check for ANY valid session (Google or Local Demo)
-  // We check for 'next-auth.session-token' (Standard) or 'currentUser' (Our demo cookie)
-  const token = request.cookies.get('next-auth.session-token')?.value || 
-                request.cookies.get('currentUser')?.value
+  // 1. Define Paths
+  const isPublicPath = path === "/auth/login" || path === "/auth/signup";
+  const isProtectedPath = path === "/dashboard" || path.startsWith("/auth/settings");
 
-  // 3. LOGIC: If user is logged in and tries to go to Login/Signup, send them HOME
-  if (isPublicPath && token) {
-    return NextResponse.redirect(new URL('/', request.nextUrl))
+  // 2. Check for NextAuth Token (Google)
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  // 3. Check for Local Cookie (OTP Login)
+  const localCookie = request.cookies.get("currentUser")?.value;
+
+  // 4. Determine if the user is authenticated by EITHER method
+  const isAuthenticated = !!token || !!localCookie;
+
+  // Redirect Logic
+  if (isPublicPath && isAuthenticated) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // 4. LOGIC: If user is NOT logged in and tries to access Protected areas, send to LOGIN
-  if (isProtectedPath && !token) {
-    return NextResponse.redirect(new URL('/auth/login', request.nextUrl))
+  if (isProtectedPath && !isAuthenticated) {
+    return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 }
 
-// 5. MATCHER: Ensure these paths are processed by the middleware
 export const config = {
   matcher: [
-    '/',
-    '/auth/login',
-    '/auth/signup',
-    '/auth/settings/:path*', // ✅ Protects settings and any sub-pages
+    "/",
+    "/dashboard",
+    "/auth/login",
+    "/auth/signup",
+    "/auth/settings/:path*",
   ],
-}
+};
